@@ -24,6 +24,12 @@ jobs:
         with:
           node-version: 22
       - run: npm test
+      - run: npm run build
+      # Ready-to-upload portal builds, downloadable from the run's Artifacts section.
+      - uses: actions/upload-artifact@v7
+        with:
+          name: portal-builds
+          path: dist/beamline-*.zip
 
   deploy:
     needs: test

@@ -8,7 +8,7 @@ const { gem, gemDefs } = require('./logo.js');
 
 const OUT = path.join(__dirname, '..', 'promo');
 const BASE = process.env.BASE || 'http://localhost:8766/web/';
-const LEVEL = 65; // a portal level whose solved board looks busy and bright
+const LEVEL = 80; // the solved board with the most light on it (longest beams, most gems, a portal)
 const SIZES = [
   ['cover-landscape', 1920, 1080],
   ['cover-portrait', 800, 1200],

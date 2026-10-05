@@ -79,7 +79,9 @@ npm run build -- poki    # just one target
   wants thumbnails without text). Regenerate them with `NODE_PATH=$(npm root -g) node scripts/covers.js`
   while a server runs on `:8766` serving `dist/`. The logo and icon (`src/logo.svg`, `src/icon.svg`) come from
   `node scripts/logo.js`.
-  The portal also wants a short gameplay video. Record one by hand from the CrazyGames build.
+  `promo/gameplay.mp4` is a 30 s 1080p gameplay video recorded from the real game (`scripts/video.js`).
+  `promo/crazygames-listing.md` has the title, description, controls and tags ready to paste.
+  Every push to `main` also attaches the three portal zips to the workflow run (Actions → run → Artifacts).
 - **Poki:** apply via their developer site. Poki works invite/pitch-first; when accepted, upload
   `dist/beamline-poki.zip` through Poki for Developers.
 - **Web:** `.github/workflows/pages.yml` runs the tests, builds `web` and deploys to GitHub Pages on every push to `main`.
