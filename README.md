@@ -61,7 +61,7 @@ Other portal requirements this build meets:
 - Mute toggle. Keyboard play: arrows + space, Z undo, R restart, H hint, Esc back.
 - If the SDK is missing or blocked by an ad blocker, the game still works fully.
 
-Free hints: you start with 3 and earn 1 more for every 5 new levels cleared. After that, hints come from rewarded
+Free hints: you start with none (levels 1–5 don't need them), earn 1 for every 5 new levels cleared, and can bank at most 3, so they cover emergencies without making rewarded hints pointless. After that, hints come from rewarded
 ads, and so does skipping a level (players who get stuck can move on instead of quitting). Those are the main
 revenue levers besides midgame ads.
 

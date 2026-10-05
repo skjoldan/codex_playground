@@ -12,9 +12,14 @@
   // ---- persistence ---------------------------------------------------------
   const STORE_KEY = 'beamline:v2';
   const store = (() => {
-    const base = { levels: {}, skipped: {}, daily: {}, hints: 3, cleared: 0, tips: {}, seen: {}, muted: false, music: true };
+    const base = { levels: {}, skipped: {}, daily: {}, hints: 0, cleared: 0, tips: {}, seen: {}, muted: false, music: true };
     try { return Object.assign(base, JSON.parse(P.storage.get(STORE_KEY) || '{}')); } catch (e) { return base; }
   })();
+  // Free hints: none at the start (levels 1-5 don't need them), +1 per 5 new levels cleared, at most
+  // HINT_CAP banked — enough for an emergency, never a stockpile that makes rewarded hints pointless.
+  const HINT_CAP = 3;
+  const HINT_EVERY = 5;
+  store.hints = Math.min(store.hints, HINT_CAP);
   const save = () => P.storage.set(STORE_KEY, JSON.stringify(store));
 
   A.setMuted(store.muted);
@@ -218,7 +223,7 @@
     ['par', () => puzzle.mirrors > 1, 'Every tap is a move. Solve it within par for ★★★ — plan before you tap!'],
     ['walls', () => has('#'), 'Walls block the beam.'],
     ['fixed', () => has('/') || has('\\'), 'Grey mirrors are fixed in place — use them, or work around them.'],
-    ['hint', () => mode === 'campaign' && puzzle.campaignLevel >= 8, 'Stuck? Hints reveal a mirror (max ★★ when used).'],
+    ['hint', () => store.hints > 0, 'You earned a hint! Stuck? Hints reveal a mirror (max ★★ when used).'],
   ];
   function showTip() {
     const tip = TIPS.find(([id, when]) => !store.tips[id] && when());
@@ -677,12 +682,12 @@
       delete store.skipped[n];
       if (first) {
         store.cleared++;
-        if (store.cleared % 5 === 0) {
+        if (store.cleared % HINT_EVERY === 0 && store.hints < HINT_CAP) {
           store.hints++;
-          extra = '+1 free hint!';
+          extra = '💡 +1 free hint!';
         }
         if (n % B.LEVELS_PER_WORLD === 0 && n < B.CAMPAIGN_SIZE) {
-          extra = `🎉 World ${B.WORLDS[n / B.LEVELS_PER_WORLD]} unlocked!`;
+          extra = `🎉 World ${B.WORLDS[n / B.LEVELS_PER_WORLD]} unlocked!` + (extra ? ` ${extra}` : '');
           setTimeout(() => A.fanfare(), 600);
         }
       }
