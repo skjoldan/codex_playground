@@ -1,0 +1,11 @@
+{
+  "name": "beamline",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Beamline — a daily laser-and-mirror puzzle.",
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "start": "npx --yes serve src"
+  },
+  "license": "MIT"
+}
