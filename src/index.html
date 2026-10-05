@@ -2,114 +2,115 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Beamline — daily laser puzzle</title>
-  <meta name="description" content="Bend a laser with mirrors to light every gem. A new puzzle every day, harder as the week goes on.">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <title>Beamline — laser mirror puzzle</title>
+  <meta name="description" content="Bend a laser with mirrors to light every gem. 120 levels across 6 worlds, plus a daily challenge.">
   <meta name="theme-color" content="#0b0d17">
-  <meta property="og:title" content="Beamline — daily laser puzzle">
-  <meta property="og:description" content="Bend the beam. Light every gem. One new puzzle a day.">
-  <meta property="og:type" content="website">
-  <meta property="og:image" content="https://skjoldan.github.io/codex_playground/og.png">
-  <meta name="twitter:card" content="summary_large_image">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="manifest" href="manifest.webmanifest">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header class="top">
-    <button class="icon-btn" id="btn-help" aria-label="How to play">?</button>
-    <div class="brand">
-      <h1>Beam<span>line</span></h1>
-      <div class="sub" id="subtitle"></div>
-    </div>
-    <div class="top-right">
-      <button class="icon-btn" id="btn-archive" aria-label="Archive and practice">☰</button>
-      <button class="icon-btn" id="btn-stats" aria-label="Statistics">▥</button>
-    </div>
-  </header>
-
-  <main>
-    <div class="hud">
-      <div class="pill"><span class="k">Mirrors</span> <b id="hud-mirrors">0/0</b></div>
-      <div class="pill"><span class="k">Gems</span> <b id="hud-gems">0/0</b></div>
-      <div class="pill"><span class="k">Placed</span> <b id="hud-moves">0</b></div>
-      <div class="pill"><span class="k">Time</span> <b id="hud-time">0:00</b></div>
-    </div>
-
-    <div class="board-wrap">
-      <svg id="board" role="grid" aria-label="Puzzle board"></svg>
-    </div>
-
-    <div class="controls">
-      <button class="btn ghost" id="btn-undo">Undo</button>
-      <button class="btn ghost" id="btn-reset">Reset</button>
-      <button class="btn primary hidden" id="btn-results">Results</button>
-    </div>
-    <p class="hint" id="hint">Tap a cell to place <b>/</b>, tap again for <b>\</b>, again to remove.</p>
-  </main>
-
-  <footer class="foot">
-    <span>New puzzle at midnight · Mon is easy, Sun is brutal</span>
-    <a id="foot-support" class="hidden" target="_blank" rel="noopener">Support Beamline ♥</a>
-  </footer>
-
-  <!-- Modals -->
-  <dialog id="dlg-help">
-    <h2>How to play</h2>
-    <div class="demo">
-      <svg viewBox="0 0 100 60" aria-hidden="true">
-        <polyline class="demo-beam" points="0,15 70,15 70,60"/>
-        <line class="demo-mirror" x1="62" y1="7" x2="78" y2="23"/>
-        <path class="demo-gem" d="M35 8 L42 15 L35 22 L28 15Z"/>
-        <path class="demo-gem" d="M70 37 L77 44 L70 51 L63 44Z"/>
+  <!-- MENU -->
+  <section class="screen" id="screen-menu">
+    <button class="icon-btn mute-btn menu-mute" aria-label="Toggle sound">🔊</button>
+    <div class="menu">
+      <svg class="menu-art" viewBox="0 0 120 70" aria-hidden="true">
+        <polyline class="art-glow" points="0,20 80,20 80,55 120,55"/>
+        <polyline class="art-core" points="0,20 80,20 80,55 120,55"/>
+        <line class="art-mirror" x1="73" y1="13" x2="87" y2="27"/>
+        <line class="art-mirror" x1="73" y1="62" x2="87" y2="48"/>
+        <path class="art-gem" d="M40 13 L47 20 L40 27 L33 20Z"/>
+        <path class="art-gem" d="M80 31 L87 38 L80 45 L73 38Z"/>
+        <path class="art-gem" d="M103 48 L110 55 L103 62 L96 55Z"/>
       </svg>
+      <h1 class="logo">Beam<span>line</span></h1>
+      <p class="tagline">Bend the beam. Light every gem.</p>
+      <button class="btn primary big" id="btn-play">Play</button>
+      <div class="menu-row">
+        <button class="btn ghost" id="btn-levels">Levels</button>
+        <button class="btn ghost" id="btn-daily">Daily <span class="badge hidden" id="daily-badge">NEW</span></button>
+      </div>
+      <div class="menu-stats" id="menu-stats"></div>
     </div>
-    <ul class="rules">
-      <li>The laser enters from the edge. <b>Light every gem</b> <span class="gem-ico">◆</span> to win.</li>
-      <li>Tap an empty cell to place a mirror. Tap again to flip it, a third time to remove it.</li>
-      <li>You have a <b>limited number of mirrors</b>. Walls block the beam. Dim mirrors are fixed.</li>
-      <li><b>Par</b> is the number of mirrors you have. Every new placement counts, so think before you tap.</li>
-      <li>Monday is gentle. By Sunday you'll need every trick.</li>
-    </ul>
-    <button class="btn primary wide" data-close>Let's go</button>
-  </dialog>
+  </section>
 
-  <dialog id="dlg-result">
-    <h2 id="res-title">Solved!</h2>
-    <div class="stars" id="res-stars"></div>
-    <p class="res-line" id="res-line"></p>
-    <pre class="share-preview" id="res-share"></pre>
-    <button class="btn primary wide" id="btn-share">Share result</button>
-    <div class="statgrid" id="res-stats"></div>
-    <div class="next">Next puzzle in <b id="res-countdown">--:--:--</b></div>
-    <div class="ad-slot hidden" id="ad-slot"></div>
-    <a class="support hidden" id="res-support" target="_blank" rel="noopener">Enjoying Beamline? Buy me a coffee ☕</a>
-    <div class="row">
-      <button class="btn ghost" id="btn-practice-from-result">Practice puzzle</button>
-      <button class="btn ghost" data-close>Close</button>
+  <!-- LEVEL SELECT -->
+  <section class="screen hidden" id="screen-levels">
+    <header class="bar">
+      <button class="icon-btn" data-go="menu" aria-label="Back">‹</button>
+      <h2>Levels</h2>
+      <div class="bar-right"><span class="star-total" id="star-total"></span></div>
+    </header>
+    <nav class="worlds" id="world-tabs"></nav>
+    <div class="level-grid" id="level-grid"></div>
+  </section>
+
+  <!-- GAME -->
+  <section class="screen hidden" id="screen-game">
+    <header class="bar">
+      <button class="icon-btn" id="btn-back" aria-label="Back to levels">‹</button>
+      <h2 id="game-title">Level 1</h2>
+      <div class="bar-right">
+        <button class="icon-btn mute-btn" aria-label="Toggle sound">🔊</button>
+        <button class="icon-btn" id="btn-restart" aria-label="Restart level">↻</button>
+      </div>
+    </header>
+    <div class="game">
+      <aside class="side">
+        <div class="hud">
+          <div class="pill" id="pill-mirrors"><span class="k">Mirrors</span><b id="hud-mirrors">0</b></div>
+          <div class="pill"><span class="k">Gems</span><b id="hud-gems">0/0</b></div>
+          <div class="pill"><span class="k">Placed</span><b id="hud-moves">0</b><small id="hud-par"></small></div>
+        </div>
+        <p class="tip hidden" id="tip"></p>
+        <div class="controls">
+          <button class="btn ghost" id="btn-undo">Undo</button>
+          <button class="btn ghost" id="btn-hint">Hint <span class="badge" id="hint-count">3</span></button>
+        </div>
+      </aside>
+      <div class="board-wrap">
+        <svg id="board" aria-label="Puzzle board"></svg>
+      </div>
     </div>
-  </dialog>
+  </section>
 
-  <dialog id="dlg-stats">
-    <h2>Statistics</h2>
-    <div class="statgrid" id="stats-grid"></div>
-    <h3>Stars on recent days</h3>
-    <div class="dist" id="stats-dist"></div>
-    <button class="btn ghost wide" data-close>Close</button>
-  </dialog>
+  <!-- OVERLAYS -->
+  <div class="overlay hidden" id="ov-win">
+    <div class="card">
+      <h2 id="win-title">Level complete!</h2>
+      <div class="stars" id="win-stars"><span>★</span><span>★</span><span>★</span></div>
+      <p class="muted" id="win-line"></p>
+      <p class="muted hidden" id="win-extra"></p>
+      <div class="card-actions">
+        <button class="btn primary big" id="btn-next">Next level</button>
+        <div class="menu-row">
+          <button class="btn ghost" id="btn-replay">Replay</button>
+          <button class="btn ghost" id="btn-win-levels">Levels</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
-  <dialog id="dlg-archive">
-    <h2>Play more</h2>
-    <h3>Practice (unlimited)</h3>
-    <div class="levels" id="practice-levels"></div>
-    <h3>Archive</h3>
-    <div class="archive" id="archive-list"></div>
-    <button class="btn ghost wide" data-close>Close</button>
-  </dialog>
+  <div class="overlay hidden" id="ov-hint">
+    <div class="card">
+      <h2>Need a hint?</h2>
+      <p class="muted" id="hint-text">Watch a short video to reveal one mirror.</p>
+      <div class="card-actions">
+        <button class="btn primary big" id="btn-hint-watch">▶ Watch video</button>
+        <button class="btn ghost" id="btn-hint-cancel">Keep trying</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay hidden" id="ov-ad">
+    <div class="spinner" aria-label="Loading"></div>
+  </div>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script src="config.js"></script>
+  <script src="platform.js"></script>
+  <script src="audio.js"></script>
   <script src="engine.js"></script>
   <script src="app.js"></script>
 </body>

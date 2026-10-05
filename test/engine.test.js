@@ -66,3 +66,18 @@ test('practice seeds work at every level', () => {
     }
   }
 });
+
+test('campaign: every level generates, is solvable and ramps up', () => {
+  let prevTurns = 0;
+  for (let n = 1; n <= B.CAMPAIGN_SIZE; n++) {
+    const p = B.campaign(n);
+    assert.ok(!B.trace(p, new Map()).solved, `level ${n} solved with no mirrors`);
+    assert.ok(B.trace(p, solutionMap(p)).solved, `level ${n} intended solution fails`);
+    assert.ok(p.mirrors >= 1, `level ${n} needs no mirrors`);
+    const turns = B.campaignConfig(n).turns;
+    assert.ok(turns >= prevTurns);
+    prevTurns = turns;
+  }
+  assert.strictEqual(B.campaign(1).mirrors, 1);
+  assert.deepStrictEqual(B.campaign(57), B.campaign(57));
+});

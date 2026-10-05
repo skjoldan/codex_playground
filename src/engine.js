@@ -199,14 +199,43 @@
     return p;
   }
 
+  // `level` is a weekday tier 1..7 or a full config object (see LEVELS for the shape).
   function generate(seed, level) {
-    const lv = Math.min(7, Math.max(1, level | 0));
+    const custom = typeof level === 'object';
+    const lv = custom ? 0 : Math.min(7, Math.max(1, level | 0));
+    const cfg = custom ? level : LEVELS[lv - 1];
     const rng = mulberry32(hashString(String(seed)));
     for (let attempt = 0; attempt < 5000; attempt++) {
-      const p = buildOnce(rng, LEVELS[lv - 1]);
-      if (p) return Object.assign(p, { seed: String(seed), level: lv, levelName: LEVEL_NAMES[lv - 1] });
+      const p = buildOnce(rng, cfg);
+      if (p) return Object.assign(p, { seed: String(seed), level: lv, levelName: custom ? '' : LEVEL_NAMES[lv - 1] });
     }
     throw new Error('Could not generate puzzle for seed ' + seed);
+  }
+
+  // ---- Campaign ------------------------------------------------------------
+
+  const WORLDS = ['Spark', 'Glint', 'Prism', 'Nova', 'Pulsar', 'Quasar'];
+  const LEVELS_PER_WORLD = 20;
+  const CAMPAIGN_SIZE = WORLDS.length * LEVELS_PER_WORLD;
+
+  // Smooth ramp from a one-mirror tutorial (level 1) to 8-mirror routes with decoys (level 120).
+  function campaignConfig(n) {
+    return {
+      size: n <= 10 ? 5 : n <= 30 ? 6 : n <= 60 ? 7 : 8,
+      turns: n <= 3 ? 1 : Math.min(8, 2 + Math.floor((n - 4) / 14)),
+      fixed: n >= 11 && n % 3 === 0 ? 1 : 0,
+      decoys: n < 21 ? 0 : 1 + Math.floor((n - 21) / 30),
+      walls: n < 6 ? 0 : Math.min(0.16, 0.04 + n * 0.001),
+      extraGems: n < 3 ? 0 : n < 20 ? 1 : 2,
+    };
+  }
+
+  function campaign(n) {
+    const p = generate('campaign:' + n, campaignConfig(n));
+    p.campaignLevel = n;
+    p.world = Math.floor((n - 1) / LEVELS_PER_WORLD);
+    p.levelName = WORLDS[p.world];
+    return p;
   }
 
   // ---- Daily schedule ------------------------------------------------------
@@ -246,5 +275,6 @@
     DR, DC, LEVELS, LEVEL_NAMES,
     hashString, mulberry32, reflect, mirrorFor, trace, generate,
     dateKey, parseKey, puzzleNumber, levelForKey, daily,
+    WORLDS, LEVELS_PER_WORLD, CAMPAIGN_SIZE, campaignConfig, campaign,
   };
 });

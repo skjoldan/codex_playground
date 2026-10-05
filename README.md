@@ -1,65 +1,74 @@
 # Beamline
 
-**Bend the beam. Light every gem. One new puzzle a day.**
+**Bend the beam. Light every gem.** A laser-and-mirror puzzle game built for HTML5 game portals
+(CrazyGames, Poki) that can also run as its own website.
 
-![Beamline](src/og.png)
+![Beamline](promo/cover-landscape.png)
 
-Beamline is a daily puzzle game in the Wordle mould. A laser enters the board from the edge, and you have a
-limited number of mirrors to bounce it through every gem. Monday's puzzle is gentle (6×6, two mirrors).
-Sunday's is a *Supernova* (8×8, five mirrors to place, decoy mirrors and walls everywhere).
+A laser enters the board from the edge. You have a limited number of mirrors to bounce it through every gem.
+Tap to place a mirror, tap again to flip it, tap a third time to remove it.
 
-- **Infinite, free content.** Puzzles are generated deterministically from the date, so everyone gets the same
-  board and nobody has to design them by hand. The generator lays down a real route first, then hides it,
-  so every puzzle is solvable by construction. Tests check two years of dailies.
-- **Real puzzles.** A brute-force solver run on generated boards found that most have just 1–3 solutions, so you can't
-  stumble into them by luck.
-- **Scoring that rewards thinking.** Par is your mirror budget, and every *new* placement counts (flipping and
-  removing are free). Three stars for par, and "under par" if you find a shortcut.
-- **Built-in viral loop.** A spoiler-free emoji share card, streaks, stats, an archive and unlimited practice.
-- **Zero-cost stack.** Static HTML/JS/CSS with no build step and no backend, hosted on GitHub Pages.
+- **120 levels in 6 worlds** (Spark → Quasar). They ramp from a one-mirror tutorial on a 5×5 board to 8-mirror routes
+  with walls and decoy mirrors on 8×8. Fixed-mirror levels act as breathers in between.
+- **Stars:** ★★★ if you place no more mirrors than par. Using a hint caps the level at ★★.
+- **Daily challenge:** one shared puzzle a day, with a streak counter. It gives players a reason to come back.
+- **Generated levels.** Every level is built from a hidden solution route, so each one is guaranteed to be
+  solvable. Tests check all 120 campaign levels and two years of dailies.
+- **About 18 KB in total.** No assets, no dependencies, no build step needed to play. Sound is synthesised with WebAudio.
 
-## Play / develop
+## Portal integration
+
+All SDK calls go through `src/platform.js`, so the game code never touches a portal directly.
+
+| Moment | CrazyGames v3 | Poki v2 |
+| --- | --- | --- |
+| Boot | `SDK.init()`, `game.loadingStart/Stop()` | `PokiSDK.init()`, `gameLoadingFinished()` |
+| Level starts / player returns from a menu | `game.gameplayStart()` | `gameplayStart()` |
+| Level solved, menus, hint dialog | `game.gameplayStop()` | `gameplayStop()` |
+| 3-star solve | `game.happytime()` | — |
+| "Next level" / "Replay" | `ad.requestAd('midgame')` | `commercialBreak()` |
+| Hint with no free hints left | `ad.requestAd('rewarded')`, after a confirm dialog | `rewardedBreak()` |
+| Save | `data.setItem/getItem` (cloud save) | `localStorage` |
+
+Other portal requirements this build meets:
+- Audio is muted while an ad plays, and the UI is blocked with a spinner until the ad finishes or fails.
+- Rewarded ads only start from an explicit "Watch video" confirmation, never from a button on the active board.
+- A reward is granted only when the ad finishes. If the ad fails, the player sees a message and gets nothing.
+- No external links, no own ads, and no sharing to outside URLs.
+- It fits any iframe size without scrolling: side panel in landscape, stacked in portrait. Arrow keys and space
+  never scroll the host page.
+- Mute toggle. Keyboard play: arrows + space, Z undo, R restart, H hint, Esc back.
+- If the SDK is missing or blocked by an ad blocker, the game still works fully.
+
+Free hints: you start with 3 and earn 1 more for every 5 new levels cleared. After that, hints come from rewarded
+ads. That is the main revenue lever besides midgame ads.
+
+## Build & submit
 
 ```bash
-npm test          # engine tests (node --test)
-npm start         # serves src/ locally
+npm test                 # engine tests: all campaign levels + 2 years of dailies are solvable
+npm run build            # dist/{web,crazygames,poki}/ + dist/beamline-<target>.zip
+npm run build -- poki    # just one target
 ```
 
-Files of note:
+- **CrazyGames:** upload `dist/beamline-crazygames.zip` in the developer portal (it starts with a Basic Launch).
+  Cover images are in `promo/` (1920×1080, 800×1200, 800×800). Regenerate them with
+  `NODE_PATH=$(npm root -g) node scripts/covers.js` while a server runs on `:8766` serving `dist/`.
+  The portal also wants a short gameplay video. Record one by hand from the CrazyGames build.
+- **Poki:** apply via their developer site. Poki works invite/pitch-first; when accepted, upload
+  `dist/beamline-poki.zip` through Poki for Developers.
+- **Web:** `.github/workflows/pages.yml` runs the tests, builds `web` and deploys to GitHub Pages on every push to `main`.
+  Setup: Settings → Pages → Source: GitHub Actions. The web build has no ads, and hints are free there.
 
-| File | What it is |
+Test inside the CrazyGames QA tool before submitting. Locally the SDK runs in demo mode.
+
+## Code map
+
+| File | Purpose |
 | --- | --- |
-| `src/engine.js` | Pure puzzle logic: seeded RNG, generator, beam tracer, daily schedule. Shared by browser and tests. |
-| `src/app.js` | UI: SVG board, input, timer, persistence, stats, sharing, archive/practice. |
-| `src/config.js` | Site URL, tip-jar link, AdSense IDs. Leave a field empty to disable that feature. |
-| `test/engine.test.js` | Determinism, solvability, difficulty schedule. |
-
-URL modes: `/` (today), `/?d=2026-10-05` (archive), `/?p=<seed>&l=<1-7>` (practice; `p=random` rolls a new one).
-
-## Deploy
-
-`.github/workflows/pages.yml` runs the tests and publishes `src/` to GitHub Pages on every push to `main`.
-One-time setup: **Settings → Pages → Source: GitHub Actions**. If you use a custom domain, update `siteUrl` in
-`src/config.js` and the `og:image` URL in `src/index.html`.
-
-## Revenue plan
-
-The goal is a free daily habit with low-friction monetisation layered on top, in order of effort:
-
-1. **Tip jar (live as soon as configured).** Set `supportUrl` (Ko-fi, Buy Me a Coffee or GitHub Sponsors). The link
-   shows on the results screen, when players are happiest.
-2. **One ad, results screen only (live as soon as configured).** Set `adsenseClient` and `adsenseSlot`. The board stays
-   ad-free while people play. The script only loads after a solve.
-3. **Beamline+ (next step, not built).** A one-time purchase or small subscription through Gumroad or Lemon Squeezy
-   license keys. It would unlock new mechanics in practice mode (splitters, coloured beams, portals), hint tokens, and
-   no ads. The generator is already parameterised (`LEVELS` in `engine.js`), so new mechanics extend the existing
-   pipeline.
-4. **Distribution.** Puzzle portals and newspapers license daily games. A deterministic, backend-free generator
-   is easy to embed or white-label.
-
-What matters first is retention, not monetisation. Watch D1/D7 return rates (add a privacy-friendly analytics
-script such as Plausible or GoatCounter) before you spend effort on (3).
-
-## License
-
-MIT
+| `src/engine.js` | Pure logic: seeded RNG, generator, beam tracer, campaign curve, daily schedule. Shared with the tests. |
+| `src/app.js` | Screens, board rendering (SVG), input, hints, stars, progress, tips. |
+| `src/platform.js` | Portal SDK adapter (CrazyGames / Poki / web). |
+| `src/audio.js` | WebAudio sound effects. |
+| `scripts/build.js` | Per-portal builds and zips. |
+| `scripts/covers.js` | Renders the portal cover images from the real game. |
