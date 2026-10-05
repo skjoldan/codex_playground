@@ -30,9 +30,40 @@ test('trace stops at walls and lights gems it passes', () => {
     gemCount: 1,
   };
   const t = B.trace(p, new Map());
-  assert.strictEqual(t.end, 'wall');
+  assert.strictEqual(t.beams[0].end, 'wall');
   assert.ok(t.solved);
-  assert.deepStrictEqual(t.points, [[-1, 1], [1, 1]]);
+  assert.deepStrictEqual(t.beams[0].points, [[-1, 1], [1, 1]]);
+});
+
+test('splitters fork the beam, portals teleport it, mines fail the board', () => {
+  // Beam enters top of column 1, hits a '\'-splitter at (1,1): one branch goes right, one continues down.
+  const split = {
+    size: 3,
+    grid: ['.', '.', '.', '.', 'Z', '*', '.', '*', '.'],
+    emitter: { r: -1, c: 1, dir: 2 },
+    portals: [],
+    gemCount: 2,
+  };
+  const t = B.trace(split, new Map());
+  assert.strictEqual(t.beams.length, 2);
+  assert.ok(t.solved);
+
+  // Portal at (0,0) sends the beam to (2,0); it continues right through a gem at (2,2).
+  const portal = {
+    size: 3,
+    grid: ['@', '.', '.', '.', '.', '.', '@', '.', '*'],
+    emitter: { r: 0, c: -1, dir: 1 },
+    portals: [0, 6],
+    gemCount: 1,
+  };
+  const tp = B.trace(portal, new Map());
+  assert.ok(tp.solved);
+  assert.deepStrictEqual(tp.beams.map((b) => b.end), ['portal', 'exit']);
+
+  const mine = Object.assign({}, split, { grid: ['.', '.', '.', '.', 'Z', '*', '.', 'x', '.'], gemCount: 1 });
+  const tm = B.trace(mine, new Map());
+  assert.strictEqual(tm.mineHit, 7);
+  assert.ok(!tm.solved, 'all gems lit but a mine was hit');
 });
 
 test('generation is deterministic', () => {
@@ -48,7 +79,6 @@ test('two years of dailies: solvable, unsolved at start, correct mirror budget',
     assert.ok(!B.trace(p, new Map()).solved, `${key} solved with no mirrors`);
     assert.ok(B.trace(p, solutionMap(p)).solved, `${key} intended solution fails`);
     assert.strictEqual(p.mirrors, p.solution.length);
-    assert.strictEqual(p.mirrors, B.LEVELS[p.level - 1].turns - B.LEVELS[p.level - 1].fixed);
     for (const { r, c } of p.solution) assert.strictEqual(p.grid[r * p.size + c], '.');
   }
 });
@@ -67,17 +97,21 @@ test('practice seeds work at every level', () => {
   }
 });
 
-test('campaign: every level generates, is solvable and ramps up', () => {
-  let prevTurns = 0;
+test('campaign: every level generates, is solvable and uses its world\'s pieces', () => {
   for (let n = 1; n <= B.CAMPAIGN_SIZE; n++) {
     const p = B.campaign(n);
+    const cfg = B.campaignConfig(n);
     assert.ok(!B.trace(p, new Map()).solved, `level ${n} solved with no mirrors`);
     assert.ok(B.trace(p, solutionMap(p)).solved, `level ${n} intended solution fails`);
     assert.ok(p.mirrors >= 1, `level ${n} needs no mirrors`);
-    const turns = B.campaignConfig(n).turns;
-    assert.ok(turns >= prevTurns);
-    prevTurns = turns;
+    const count = (ch) => p.grid.filter((c) => c === ch).length;
+    assert.strictEqual(count('S') + count('Z'), cfg.splitters, `level ${n} splitters`);
+    assert.strictEqual(count('@'), cfg.portals * 2, `level ${n} portals`);
+    assert.ok(count('x') <= cfg.mines, `level ${n} mines`);
   }
   assert.strictEqual(B.campaign(1).mirrors, 1);
+  assert.ok(B.campaign(21).grid.includes('x'), 'Glint introduces mines');
+  assert.ok(B.campaign(41).grid.some((c) => c === 'S' || c === 'Z'), 'Prism introduces splitters');
+  assert.ok(B.campaign(61).grid.includes('@'), 'Nova introduces portals');
   assert.deepStrictEqual(B.campaign(57), B.campaign(57));
 });

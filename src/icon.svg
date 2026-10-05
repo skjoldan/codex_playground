@@ -1,7 +1,29 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="14" fill="#0b0d17"/>
-  <polyline points="6,20 40,20 40,58" fill="none" stroke="#ff3d7f" stroke-width="7" stroke-linejoin="round" opacity=".5"/>
-  <polyline points="6,20 40,20 40,58" fill="none" stroke="#fff" stroke-width="2.5" stroke-linejoin="round"/>
-  <line x1="33" y1="13" x2="47" y2="27" stroke="#ffe680" stroke-width="4" stroke-linecap="round"/>
-  <path d="M40 36 L47 43 L40 50 L33 43Z" fill="#5ef2ff"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <radialGradient id="bg" cx=".5" cy=".35" r=".8"><stop offset="0" stop-color="#5a24c9"/><stop offset="1" stop-color="#1a0b45"/></radialGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4"/></filter>
+    <linearGradient id="icon-body" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#b8fbff"/><stop offset=".5" stop-color="#3fe3f5"/><stop offset="1" stop-color="#1c8fd6"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="28" fill="url(#bg)"/>
+  <polyline points="0,30 98,30 98,128" fill="none" stroke="#ff3d7f" stroke-width="12" opacity=".6" filter="url(#glow)"/>
+  <polyline points="0,30 98,30 98,128" fill="none" stroke="#fff" stroke-width="4"/>
+  <line x1="86" y1="18" x2="110" y2="42" stroke="#ffe680" stroke-width="7" stroke-linecap="round"/>
+  <circle cx="62" cy="76" r="34" fill="#5ef2ff" opacity=".35" filter="url(#glow)"/>
+  
+  <g>
+    <path d="M62 38 L94.68 70.3 L62 114 L29.32 70.3 Z" fill="url(#icon-body)" stroke="#14093a" stroke-width="3.42" stroke-linejoin="round"/>
+    <path d="M62 38 L94.68 70.3 L62 74.1 Z" fill="#fff" opacity=".45"/>
+    <path d="M62 38 L29.32 70.3 L47.294 71.44 Z" fill="#fff" opacity=".8"/>
+    <ellipse cx="52.196" cy="75.24" rx="5.776" ry="7.22" fill="#fff"/>
+       <ellipse cx="71.804" cy="75.24" rx="5.776" ry="7.22" fill="#fff"/>
+       <circle cx="53.1764" cy="76.38" r="3.971" fill="#14093a"/>
+       <circle cx="72.7844" cy="76.38" r="3.971" fill="#14093a"/>
+       <circle cx="54.156800000000004" cy="74.1" r="1.444" fill="#fff"/>
+       <circle cx="73.7648" cy="74.1" r="1.444" fill="#fff"/>
+       <path d="M56.7712 83.6 Q62.9804 91.96 68.536 83.6 Z" fill="#14093a"/>
+       <ellipse cx="45.66" cy="83.6" rx="5.053999999999999" ry="2.888" fill="#ff7aa8" opacity=".7"/>
+       <ellipse cx="78.9936" cy="83.6" rx="5.053999999999999" ry="2.888" fill="#ff7aa8" opacity=".7"/>
+  </g>
 </svg>

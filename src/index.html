@@ -4,27 +4,22 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
   <title>Beamline — laser mirror puzzle</title>
-  <meta name="description" content="Bend a laser with mirrors to light every gem. 120 levels across 6 worlds, plus a daily challenge.">
+  <meta name="description" content="Bend a laser with mirrors to light up every gem. 120 levels across 6 worlds with splitters, portals and mines, plus a daily challenge.">
   <meta name="theme-color" content="#0b0d17">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="preload" href="fonts/fredoka.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/lilita-one.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body data-world="0">
   <!-- MENU -->
-  <section class="screen" id="screen-menu">
-    <button class="icon-btn mute-btn menu-mute" aria-label="Toggle sound">🔊</button>
+  <section class="screen hidden" id="screen-menu">
+    <div class="corner-btns">
+      <button class="icon-btn music-btn" aria-label="Toggle music">♪</button>
+      <button class="icon-btn mute-btn" aria-label="Toggle sound">🔊</button>
+    </div>
     <div class="menu">
-      <svg class="menu-art" viewBox="0 0 120 70" aria-hidden="true">
-        <polyline class="art-glow" points="0,20 80,20 80,55 120,55"/>
-        <polyline class="art-core" points="0,20 80,20 80,55 120,55"/>
-        <line class="art-mirror" x1="73" y1="13" x2="87" y2="27"/>
-        <line class="art-mirror" x1="73" y1="62" x2="87" y2="48"/>
-        <path class="art-gem" d="M40 13 L47 20 L40 27 L33 20Z"/>
-        <path class="art-gem" d="M80 31 L87 38 L80 45 L73 38Z"/>
-        <path class="art-gem" d="M103 48 L110 55 L103 62 L96 55Z"/>
-      </svg>
-      <h1 class="logo">Beam<span>line</span></h1>
-      <p class="tagline">Bend the beam. Light every gem.</p>
+      <img class="menu-logo" src="logo.svg" alt="Beamline" width="548" height="312">
       <button class="btn primary big" id="btn-play">Play</button>
       <div class="menu-row">
         <button class="btn ghost" id="btn-levels">Levels</button>
@@ -37,9 +32,11 @@
   <!-- LEVEL SELECT -->
   <section class="screen hidden" id="screen-levels">
     <header class="bar">
-      <button class="icon-btn" data-go="menu" aria-label="Back">‹</button>
-      <h2>Levels</h2>
-      <div class="bar-right"><span class="star-total" id="star-total"></span></div>
+      <button class="icon-btn" data-go="menu" aria-label="Home">⌂</button>
+      <h2>Levels <span class="star-total" id="star-total"></span></h2>
+      <div class="bar-right">
+        <button class="btn ghost small" id="btn-daily-2">Daily <span class="badge hidden" id="daily-badge-2">NEW</span></button>
+      </div>
     </header>
     <nav class="worlds" id="world-tabs"></nav>
     <div class="level-grid" id="level-grid"></div>
@@ -49,8 +46,12 @@
   <section class="screen hidden" id="screen-game">
     <header class="bar">
       <button class="icon-btn" id="btn-back" aria-label="Back to levels">‹</button>
-      <h2 id="game-title">Level 1</h2>
+      <div class="title">
+        <h2 id="game-title">Level 1</h2>
+        <small id="game-sub"></small>
+      </div>
       <div class="bar-right">
+        <button class="icon-btn music-btn" aria-label="Toggle music">♪</button>
         <button class="icon-btn mute-btn" aria-label="Toggle sound">🔊</button>
         <button class="icon-btn" id="btn-restart" aria-label="Restart level">↻</button>
       </div>
@@ -80,7 +81,7 @@
       <h2 id="win-title">Level complete!</h2>
       <div class="stars" id="win-stars"><span>★</span><span>★</span><span>★</span></div>
       <p class="muted" id="win-line"></p>
-      <p class="muted hidden" id="win-extra"></p>
+      <p class="hidden" id="win-extra"></p>
       <div class="card-actions">
         <button class="btn primary big" id="btn-next">Next level</button>
         <div class="menu-row">
@@ -93,11 +94,24 @@
 
   <div class="overlay hidden" id="ov-hint">
     <div class="card">
-      <h2>Need a hint?</h2>
-      <p class="muted" id="hint-text">Watch a short video to reveal one mirror.</p>
+      <h2>Stuck?</h2>
+      <p class="muted">Watch a short video for some help.</p>
       <div class="card-actions">
-        <button class="btn primary big" id="btn-hint-watch">▶ Watch video</button>
-        <button class="btn ghost" id="btn-hint-cancel">Keep trying</button>
+        <button class="btn primary big" id="btn-hint-watch">▶ Reveal a mirror</button>
+        <button class="btn ghost" id="btn-skip-watch">▶ Skip this level</button>
+        <button class="btn link" id="btn-hint-cancel">Keep trying</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay hidden" id="ov-feature">
+    <div class="card">
+      <div class="new-tag">NEW!</div>
+      <svg class="feature-art" id="feature-art" viewBox="0 0 100 50" aria-hidden="true"></svg>
+      <h2 id="feature-title"></h2>
+      <p class="muted" id="feature-text"></p>
+      <div class="card-actions">
+        <button class="btn primary big" id="btn-feature-ok">Got it!</button>
       </div>
     </div>
   </div>

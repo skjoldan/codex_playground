@@ -26,7 +26,7 @@ for (const t of targets) {
   fs.rmSync(out, { recursive: true, force: true });
   fs.mkdirSync(out, { recursive: true });
 
-  for (const f of fs.readdirSync(SRC)) fs.copyFileSync(path.join(SRC, f), path.join(out, f));
+  fs.cpSync(SRC, out, { recursive: true });
 
   fs.writeFileSync(
     path.join(out, 'config.js'),
