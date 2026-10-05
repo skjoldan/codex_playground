@@ -215,7 +215,7 @@
   const TIPS = [
     ['tap', () => true, 'Tap a cell to place a mirror. Tap again to flip it.'],
     ['gems', () => true, 'Light up every gem to wake them all!'],
-    ['par', () => puzzle.mirrors > 1, 'Every new mirror counts. Use no more than you have for ★★★.'],
+    ['par', () => puzzle.mirrors > 1, 'Every tap is a move. Solve it within par for ★★★ — plan before you tap!'],
     ['walls', () => has('#'), 'Walls block the beam.'],
     ['fixed', () => has('/') || has('\\'), 'Grey mirrors are fixed in place — use them, or work around them.'],
     ['hint', () => mode === 'campaign' && puzzle.campaignLevel >= 8, 'Stuck? Hints reveal a mirror (max ★★ when used).'],
@@ -505,7 +505,7 @@
     $('pill-mirrors').classList.toggle('warn', left === 0 && !solved);
     $('hud-gems').textContent = `${t.lit.size}/${puzzle.gemCount}`;
     $('hud-moves').textContent = moves;
-    $('hud-par').textContent = `par ${puzzle.mirrors}`;
+    $('hud-par').textContent = `par ${par()}`;
     $('btn-undo').disabled = solved || !undoStack.length;
     $('btn-hint').disabled = solved;
     $('hint-count').textContent = store.hints > 0 ? store.hints : '▶';
@@ -528,9 +528,9 @@
     const cur = placed.get(i);
     if (!cur && placed.size >= puzzle.mirrors) return shake('No mirrors left — flip or remove one');
     undoStack.push(new Map(placed));
+    moves++; // every tap that changes the board is a move — think before you tap
     if (!cur) {
       placed.set(i, '/');
-      moves++;
       A.place();
     } else if (cur === '/') {
       placed.set(i, '\\');
@@ -554,6 +554,7 @@
   $('btn-undo').onclick = () => {
     if (!undoStack.length || solved) return;
     placed = undoStack.pop();
+    moves++;
     A.remove();
     update();
   };
@@ -561,10 +562,11 @@
     if (solved) return;
     A.click();
     const keep = new Map([...placed].filter(([i]) => hinted.has(i)));
-    if (placed.size === keep.size && moves === 0) return;
+    if (placed.size === keep.size) return;
+    // Clearing the board keeps the move count, so trial-and-error followed by a clean replay
+    // doesn't earn ★★★. Leaving and re-entering the level starts fresh.
     undoStack = [];
     placed = keep;
-    moves = 0;
     update();
   };
   $('btn-back').onclick = () => {
@@ -648,8 +650,14 @@
   };
 
   // ---- winning -------------------------------------------------------------
+  // Fewest taps for the intended solution: '/' takes one tap, '\' takes two.
+  function par() {
+    return puzzle.solution.reduce((a, { m }) => a + (m === '/' ? 1 : 2), 0);
+  }
+
   function starsFor() {
-    const s = moves <= puzzle.mirrors ? 3 : moves <= puzzle.mirrors + 2 ? 2 : 1;
+    const p = par();
+    const s = moves <= p ? 3 : moves <= Math.max(p * 2, p + 3) ? 2 : 1;
     return usedHint ? Math.min(2, s) : s;
   }
 
@@ -693,8 +701,8 @@
 
   function openWin(s, extra) {
     const last = mode === 'campaign' && puzzle.campaignLevel === B.CAMPAIGN_SIZE;
-    $('win-title').textContent = last ? 'You beat Beamline!' : ['', 'Solved!', 'Nicely done!', moves < puzzle.mirrors ? 'Under par!' : 'Perfect beam!'][s];
-    $('win-line').textContent = `${moves} placed · par ${puzzle.mirrors}${usedHint ? ' · hint used' : ''}`;
+    $('win-title').textContent = last ? 'You beat Beamline!' : ['', 'Solved!', 'Nicely done!', moves < par() ? 'Under par!' : 'Perfect beam!'][s];
+    $('win-line').textContent = `${moves} moves · par ${par()}${usedHint ? ' · hint used' : ''}`;
     $('win-extra').textContent = extra;
     $('win-extra').classList.toggle('hidden', !extra);
     $('btn-next').textContent = mode === 'daily' ? 'Play levels' : last ? 'All levels' : 'Next level';

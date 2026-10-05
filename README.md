@@ -21,7 +21,14 @@ Tap to place a mirror, tap again to flip it, tap a third time to remove it.
 
   A brute-force solver shows that most levels from Glint onwards have **exactly one solution**. They are real puzzles,
   not trial and error.
-- **Stars:** ★★★ if you place no more mirrors than par. Using a hint caps the level at ★★.
+- **Stars:** every tap that changes the board is a move, and par is the fewest taps for the solution. ★★★ means
+  you planned before tapping. Clearing the board keeps the move count. Using a hint caps the level at ★★.
+- **Curated difficulty curve.** `scripts/curate.js` generates 48 candidates per level and scores each with a
+  backtracking-player model (`scripts/difficulty.js`): how many tempting dead ends a player who always tries the
+  most promising mirror first runs into. For each level it keeps the candidate closest to a target curve, and
+  writes the chosen seeds to `src/levels.js`. Levels 1–5 can be read at a glance. After that every level needs
+  planning, rising gradually, with a breather every fifth level and at the start of each world. Routes may
+  cross themselves, so the gems no longer show the way. A test guards the curve.
 - **Daily challenge:** one shared puzzle a day, with a streak counter. It gives players a reason to come back.
 - **Generated levels.** Every level is built from a hidden solution route, so each one is guaranteed to be
   solvable. Tests check all 120 campaign levels and two years of dailies.
@@ -61,7 +68,8 @@ revenue levers besides midgame ads.
 ## Build & submit
 
 ```bash
-npm test                 # engine tests: all campaign levels + 2 years of dailies are solvable
+npm test                 # engine tests: all campaign levels + 2 years of dailies are solvable, curve holds
+node scripts/curate.js   # re-pick level seeds after changing the generator or campaignConfig (~20 s)
 npm run build            # dist/{web,crazygames,poki}/ + dist/beamline-<target>.zip
 npm run build -- poki    # just one target
 ```
@@ -87,6 +95,8 @@ Test inside the CrazyGames QA tool before submitting. Locally the SDK runs in de
 | `src/app.js` | Screens, board rendering (SVG), input, hints, stars, progress, tips. |
 | `src/platform.js` | Portal SDK adapter (CrazyGames / Poki / web). |
 | `src/audio.js` | WebAudio sound effects. |
+| `src/levels.js` | Generated: the chosen seed per campaign level. |
+| `scripts/difficulty.js`, `scripts/curate.js` | Difficulty model and level curation. |
 | `scripts/build.js` | Per-portal builds and zips. |
 | `scripts/logo.js` | Generates the logo and icon (Lilita One embedded) and the gem character. |
 | `scripts/covers.js` | Renders the portal cover images from the real game. |

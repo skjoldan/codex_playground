@@ -115,3 +115,17 @@ test('campaign: every level generates, is solvable and uses its world\'s pieces'
   assert.ok(B.campaign(61).grid.includes('@'), 'Nova introduces portals');
   assert.deepStrictEqual(B.campaign(57), B.campaign(57));
 });
+
+test('difficulty curve: curated levels get gradually harder and stop being readable at a glance', () => {
+  const D = require('../scripts/difficulty.js');
+  assert.strictEqual(require('../src/levels.js').length, B.CAMPAIGN_SIZE, 'run node scripts/curate.js');
+  const scores = [];
+  for (let n = 1; n <= B.CAMPAIGN_SIZE; n++) scores.push(D.score(B.campaign(n), 3000));
+  const avg = (a, b) => scores.slice(a, b).reduce((x, y) => x + y, 0) / (b - a);
+  const worlds = B.WORLDS.map((_, w) => avg(w * 20, w * 20 + 20));
+  for (let w = 1; w < worlds.length; w++) assert.ok(worlds[w] > worlds[w - 1], `world ${w} not harder: ${worlds.map((x) => x.toFixed(1))}`);
+  // Only the tutorial and the odd breather may be solvable by greedy reading.
+  const trivial = scores.map((s, i) => (s === 0 ? i + 1 : 0)).filter((n) => n > 5);
+  assert.ok(trivial.length <= 3, `too many trivial levels: ${trivial}`);
+  assert.ok(scores.slice(5, 20).every((s) => s > 0), 'levels 6-20 must need more than greedy reading');
+});

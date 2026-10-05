@@ -21,7 +21,9 @@
   const SLASH = [1, 0, 3, 2]; // '/'  up->right, right->up, down->left, left->down
   const BACK = [3, 2, 1, 0];  // '\'  up->left, right->down, down->right, left->up
 
-  const DEFAULTS = { size: 7, turns: 3, fixed: 0, decoys: 0, walls: 0.1, extraGems: 1, mines: 0, splitters: 0, portals: 0 };
+  // cross: allow the hidden route to pass through its own earlier straight segments at right angles.
+  // That breaks the "follow the gems" reading, because gems are no longer met in board order.
+  const DEFAULTS = { size: 7, turns: 3, fixed: 0, decoys: 0, walls: 0.1, extraGems: 1, mines: 0, splitters: 0, portals: 0, cross: false };
 
   // Daily difficulty ramps through the week, Monday (1) to Sunday (7), and mixes in the special pieces.
   const LEVELS = [
@@ -154,7 +156,9 @@
     ][side];
 
     const grid = new Array(N * N).fill('.');
-    const used = new Set();
+    // cell -> 0 vertical pass, 1 horizontal pass, 2 event (mirror/splitter/portal), 3 crossed
+    const used = new Map();
+    const passable = (i, d) => !used.has(i) || (cfg.cross && used.get(i) === 1 - (d % 2));
     const segments = []; // { cells, needGem }
     const route = [];    // mirrors of the intended solution
     const portals = [];
@@ -166,12 +170,16 @@
       let run = 0;
       let rr = r + DR[d];
       let cc = c + DC[d];
-      while (inside(rr, cc) && !used.has(rr * N + cc)) {
+      while (inside(rr, cc) && passable(rr * N + cc, d)) {
         run++;
         rr += DR[d];
         cc += DC[d];
       }
       return { run, exits: !inside(rr, cc) };
+    }
+
+    function mark(i, d) {
+      used.set(i, used.has(i) ? 3 : d % 2);
     }
 
     // Walks one beam; returns false if this layout doesn't work out.
@@ -191,7 +199,7 @@
           for (let s = 0; s < run; s++) {
             r += DR[d];
             c += DC[d];
-            used.add(r * N + c);
+            mark(r * N + c, d);
             seg.push(r * N + c);
           }
           segments.push({ cells: seg, needGem });
@@ -199,15 +207,20 @@
         }
 
         if (run < 2) return false;
-        const len = 2 + int(run - 1);
+        // The event cell must be fresh (never on top of a crossing).
+        const lens = [];
+        for (let l = 2; l <= run; l++) if (!used.has((r + DR[d] * l) * N + (c + DC[d] * l))) lens.push(l);
+        if (!lens.length) return false;
+        const len = lens[int(lens.length)];
         const seg = [];
         for (let s = 0; s < len; s++) {
           r += DR[d];
           c += DC[d];
-          used.add(r * N + c);
+          mark(r * N + c, d);
           seg.push(r * N + c);
         }
         const at = seg.pop(); // the event cell can't hold a gem
+        used.set(at, 2);
         segments.push({ cells: seg, needGem });
         needGem = true;
 
@@ -238,7 +251,7 @@
           grid[at] = '@';
           grid[j] = '@';
           portals.push(at, j);
-          used.add(j);
+          used.set(j, 2);
           portalPairs--;
           r = Math.floor(j / N);
           c = j % N;
@@ -332,16 +345,27 @@
   const LEVELS_PER_WORLD = 20;
   const CAMPAIGN_SIZE = WORLDS.length * LEVELS_PER_WORLD;
 
+  // Player mirrors per level: a gentle staircase. Each world restarts a little lower so its new piece
+  // can be learned, then climbs past where the previous world ended.
+  function campaignMirrors(n) {
+    const w = Math.floor((n - 1) / LEVELS_PER_WORLD);
+    const k = (n - 1) % LEVELS_PER_WORLD;
+    if (w === 0) return n <= 2 ? 1 : n <= 7 ? 2 : 3;
+    const start = [0, 2, 2, 3, 4, 4][w];
+    const steps = [0, [8, 16], [6, 14], [6, 14], [10, 18], [8, 16]][w];
+    return Math.min(6, start + (k >= steps[0] ? 1 : 0) + (k >= steps[1] ? 1 : 0));
+  }
+
   function campaignConfig(n) {
     const w = Math.floor((n - 1) / LEVELS_PER_WORLD);
-    const k = (n - 1) % LEVELS_PER_WORLD; // position inside the world
+    const k = (n - 1) % LEVELS_PER_WORLD;
     const cfg = Object.assign({}, DEFAULTS, {
-      size: n <= 10 ? 5 : n <= 30 ? 6 : n <= 60 ? 7 : 8,
-      turns: n <= 3 ? 1 : Math.min(7, 2 + Math.floor((n - 4) / 16)),
-      fixed: n >= 11 && n % 3 === 0 ? 1 : 0,
-      decoys: n < 21 ? 0 : 1 + Math.floor((n - 21) / 40),
+      size: n <= 7 ? 5 : n <= 30 ? 6 : n <= 60 ? 7 : 8,
+      fixed: n >= 12 && n % 4 === 0 ? 1 : 0,
+      decoys: n < 15 ? 0 : n < 45 ? 1 : n < 90 ? 2 : 3,
       walls: n < 6 ? 0 : Math.min(0.14, 0.04 + n * 0.0008),
-      extraGems: n < 3 ? 0 : n < 20 ? 1 : 2,
+      extraGems: n < 3 ? 0 : n < 40 ? 1 : 2,
+      cross: n >= 8,
     });
     if (w === 1) cfg.mines = 1 + Math.floor(k / 7);
     if (w === 2) {
@@ -360,17 +384,24 @@
     }
     // The first two levels of a world teach its new piece on a calmer board.
     if (w >= 1 && k < 2) {
-      cfg.turns = Math.max(2, cfg.turns - 2);
       cfg.fixed = 0;
       cfg.decoys = 0;
       cfg.walls = Math.min(cfg.walls, 0.06);
       cfg.mines = Math.min(cfg.mines, 2);
     }
+    cfg.turns = campaignMirrors(n) + cfg.fixed;
     return cfg;
   }
 
-  function campaign(n) {
-    const p = generate('campaign:' + n, campaignConfig(n));
+  // Which generator seed each level uses. scripts/curate.js picks, per level, the candidate whose
+  // measured difficulty fits the curve and writes them to src/levels.js; without it, seed 0 is used.
+  const CAMPAIGN_SEEDS = (typeof module === 'object' && module.exports)
+    ? (() => { try { return require('./levels.js'); } catch (e) { return []; } })()
+    : (typeof self !== 'undefined' && self.BEAMLINE_SEEDS) || [];
+
+  function campaign(n, seed) {
+    const s = seed !== undefined ? seed : CAMPAIGN_SEEDS[n - 1] || 0;
+    const p = generate(`campaign:${n}:${s}`, campaignConfig(n));
     p.campaignLevel = n;
     p.world = Math.floor((n - 1) / LEVELS_PER_WORLD);
     p.levelName = WORLDS[p.world];
@@ -414,6 +445,6 @@
     DR, DC, LEVELS, LEVEL_NAMES,
     hashString, mulberry32, reflect, mirrorFor, isSplitter, splitterShape, trace, generate,
     dateKey, parseKey, puzzleNumber, levelForKey, daily,
-    WORLDS, WORLD_FEATURES, LEVELS_PER_WORLD, CAMPAIGN_SIZE, campaignConfig, campaign,
+    WORLDS, WORLD_FEATURES, LEVELS_PER_WORLD, CAMPAIGN_SIZE, campaignConfig, campaignMirrors, campaign,
   };
 });
